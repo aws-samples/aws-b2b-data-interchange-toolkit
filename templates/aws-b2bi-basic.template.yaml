@@ -1,0 +1,428 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  This template creates all AWS B2Bi resources, including a profile, active transformer, capability, and partnership. This template also
+  creates an S3 bucket with all neccessary permissions and settings for your capability.
+  **WARNING** You will be billed for the AWS resources used if you create a stack from this template.
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Profile
+        Parameters:
+          - ProfileName
+          - ProfileBusinessName
+          - ProfileEmail
+          - ProfilePhone
+          - ProfileLogging
+      - Label:
+          default: Transformer
+        Parameters:
+          - TransformerName
+          - TransformerTemplateVersion
+          - TransformerTemplateTransactionSet
+          - TransformerFileFormat
+          - TransformerMappingTemplate
+      - Label:
+          default: Capability
+        Parameters:
+          - CapabilityName
+          - CapabilityVersion
+          - CapabilityTransactionSet
+          - CapabilityS3BucketName
+      - Label:
+          default: Partnership
+        Parameters:
+          - PartnershipName
+          - PartnershipEmail
+      - Label:
+          default: General
+        Parameters:
+          - Prefix
+    ParameterLabels:
+      ProfileName:
+        default: Profile name
+      ProfileBusinessName:
+        default: Business name
+      ProfileEmail:
+        default: Primary contact email
+      ProfilePhone:
+        default: Primary phone number
+      ProfileLogging:
+        default: Logging
+      TransformerName:
+        default: Transformer name
+      TransformerTemplateVersion:
+        default: Version
+      TransformerTemplateTransactionSet:
+        default: EDI document number
+      TransformerFileFormat:
+        default: Document format
+      TransformerMappingTemplate:
+        default: Mapping template
+      CapabilityName:
+        default: Capability name
+      CapabilityVersion:
+        default: Version
+      CapabilityTransactionSet:
+        default: EDI document number
+      CapabilityS3BucketName:
+        default: Name of S3 bucket used by capability
+      PartnershipName:
+        default: Partnership name
+      PartnershipEmail:
+        default: Business email address
+
+Parameters:
+  ProfileName:
+    Type: String
+    Description: The name used to identify your profile.
+    MinLength: 1
+    MaxLength: 254
+    Default: My B2Bi Profile
+  ProfileBusinessName:
+    Type: String
+    Description: The name of your organization or business department.
+    MinLength: 1
+    MaxLength: 254
+    Default: Great Company
+  ProfileEmail:
+    Type: String
+    Description: The primary contact email for your organization or business department.
+    AllowedPattern: ^[\w\.\-]+@[\w\.\-]+$
+    MinLength: 5
+    MaxLength: 254
+    Default: john@businessdomain.com
+  ProfilePhone:
+    Type: String
+    Description: The primary phone number for your organization or business department.
+    AllowedPattern: ^\+?([0-9 \t\-()\/]{7,})(?:\s*(?:#|x\.?|ext\.?|extension) \t*(\d+))?$
+    MinLength: 5
+    MaxLength: 22
+    Default: 1-555-678-9012
+  ProfileLogging:
+    Type: String
+    Description: Monitor your activity by accessing and analyzing your log streams in Amazon CloudWatch and AWS CloudTrail.
+    AllowedValues:
+      - ENABLED
+      - DISABLED
+    Default: ENABLED
+  TransformerName:
+    Type: String
+    Description: Name the transformer. This field cannot be edited later.
+    AllowedPattern: ^[a-zA-Z0-9_-]{1,512}$
+    Default: MyB2BiTransformer
+  TransformerTemplateVersion:
+    Type: String
+    Description: X12 version.
+    AllowedValues:
+      - VERSION_4010
+      - VERSION_4030
+      - VERSION_5010
+    Default: VERSION_4010
+  TransformerTemplateTransactionSet:
+    Type: String
+    Description: EDI document number.
+    AllowedValues:
+      - X12_110
+      - X12_180
+      - X12_204
+      - X12_210
+      - X12_211
+      - X12_214
+      - X12_215
+      - X12_269
+      - X12_270
+      - X12_271
+      - X12_274
+      - X12_275
+      - X12_276
+      - X12_277
+      - X12_278
+      - X12_310
+      - X12_315
+      - X12_322
+      - X12_404
+      - X12_410
+      - X12_810
+      - X12_820
+      - X12_824
+      - X12_830
+      - X12_832
+      - X12_834
+      - X12_835
+      - X12_837
+      - X12_846
+      - X12_850
+      - X12_852
+      - X12_855
+      - X12_856
+      - X12_860
+      - X12_861
+      - X12_864
+      - X12_865
+      - X12_940
+      - X12_990
+      - X12_997
+      - X12_999
+    Default: X12_214
+  TransformerFileFormat:
+    Type: String
+    Description: File format to convert EDI document into.
+    AllowedValues:
+      - JSON
+      - XML
+    Default: JSON
+  TransformerMappingTemplate:
+    Type: String
+    Description: Template to map your input to the desired output.
+    MinLength: 0
+    MaxLength: 350000
+  CapabilityName:
+    Type: String
+    Description: Capability name.
+    MinLength: 1
+    MaxLength: 254
+    Default: My B2Bi Capability
+  CapabilityVersion:
+    Type: String
+    Description: X12 version
+    AllowedValues:
+      - VERSION_4010
+      - VERSION_4030
+      - VERSION_5010
+    Default: VERSION_4010
+  CapabilityTransactionSet:
+    Type: String
+    Description: EDI document number.
+    AllowedValues:
+      - X12_110
+      - X12_180
+      - X12_204
+      - X12_210
+      - X12_211
+      - X12_214
+      - X12_215
+      - X12_269
+      - X12_270
+      - X12_271
+      - X12_274
+      - X12_275
+      - X12_276
+      - X12_277
+      - X12_278
+      - X12_310
+      - X12_315
+      - X12_322
+      - X12_404
+      - X12_410
+      - X12_810
+      - X12_820
+      - X12_824
+      - X12_830
+      - X12_832
+      - X12_834
+      - X12_835
+      - X12_837
+      - X12_846
+      - X12_850
+      - X12_852
+      - X12_855
+      - X12_856
+      - X12_860
+      - X12_861
+      - X12_864
+      - X12_865
+      - X12_940
+      - X12_990
+      - X12_997
+      - X12_999
+    Default: X12_214
+  CapabilityS3BucketName:
+    Type: String
+    Description: Name of S3 bucket that will be created and used for capability.
+    MinLength: 3
+    MaxLength: 63
+    Default: my-b2bi-bucket
+  PartnershipName:
+    Type: String
+    Description: Partnership name.
+    MinLength: 1
+    MaxLength: 254
+    Default: My B2Bi Partnership
+  PartnershipEmail:
+    Type: String
+    Description: This email will be the primary point of contact for this partnership.
+    AllowedPattern: ^[\w\.\-]+@[\w\.\-]+$
+    MinLength: 5
+    MaxLength: 254
+    Default: john@businessdomain.com
+  Prefix:
+    Type: String
+    Description: Unique name prefix for resources that are created by the stack.
+    ConstraintDescription: Must not start with a dash, and must only contain lowercase a-z, digits, and a dash.
+    AllowedPattern: ^[a-z0-9][a-z0-9-]+$
+    MinLength: 1
+    MaxLength: 30
+    Default: b2bi
+
+Resources:
+  B2BiS3Bucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    Properties:
+      BucketName:
+        Fn::Sub: ${CapabilityS3BucketName}-${AWS::Region}-${AWS::AccountId}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - BucketKeyEnabled: true
+            ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      NotificationConfiguration:
+        EventBridgeConfiguration:
+          EventBridgeEnabled: true
+  B2BiS3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    DeletionPolicy: Delete
+    Properties:
+      Bucket:
+        Ref: B2BiS3Bucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Id: B2BiS3BucketPolicy
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: b2bi.amazonaws.com
+            Action:
+              - s3:GetObject
+              - s3:GetObjectAttributes
+            Resource:
+              Fn::Sub: arn:aws:s3:::${B2BiS3Bucket}/inputs/*
+            Condition:
+              StringEquals:
+                aws:SourceAccount:
+                  Ref: AWS::AccountId
+          - Effect: Allow
+            Principal:
+              Service: b2bi.amazonaws.com
+            Action:
+              - s3:GetObject
+              - s3:DeleteObject
+              - s3:PutObject
+              - s3:AbortMultipartUpload
+            Resource:
+              Fn::Sub: arn:aws:s3:::${B2BiS3Bucket}/outputs/*
+            Condition:
+              StringEquals:
+                aws:SourceAccount:
+                  Ref: AWS::AccountId
+
+  B2BiProfile:
+    Type: AWS::B2BI::Profile
+    Properties:
+      Name:
+        Ref: ProfileName
+      BusinessName:
+        Ref: ProfileBusinessName
+      Email:
+        Ref: ProfileEmail
+      Phone:
+        Ref: ProfilePhone
+      Logging:
+        Ref: ProfileLogging
+
+  B2BiTransformer:
+    Type: AWS::B2BI::Transformer
+    Properties:
+      Name:
+        Ref: TransformerName
+      FileFormat:
+        Ref: TransformerFileFormat
+      MappingTemplate:
+        Ref: TransformerMappingTemplate
+      Status: active
+      EdiType:
+        X12Details:
+          Version:
+            Ref: TransformerTemplateVersion
+          TransactionSet:
+            Ref: TransformerTemplateTransactionSet
+
+  B2BiCapability:
+    Type: AWS::B2BI::Capability
+    Properties:
+      Name:
+        Ref: CapabilityName
+      Type: edi
+      Configuration:
+        Edi:
+          Type:
+            X12Details:
+              TransactionSet:
+                Ref: CapabilityTransactionSet
+              Version:
+                Ref: CapabilityVersion
+          InputLocation:
+            BucketName:
+              Ref: B2BiS3Bucket
+            Key: inputs
+          OutputLocation:
+            BucketName:
+              Ref: B2BiS3Bucket
+            Key: outputs
+          TransformerId:
+            Ref: B2BiTransformer
+
+  B2BiPartnership:
+    Type: AWS::B2BI::Partnership
+    Properties:
+      Capabilities:
+        - Ref: B2BiCapability
+      Email:
+        Ref: PartnershipEmail
+      Name:
+        Ref: PartnershipName
+      ProfileId:
+        Ref: B2BiProfile
+
+Outputs:
+  ProfileId:
+    Value:
+      Ref: B2BiProfile
+    Export:
+      Name:
+        Fn::Sub: ${Prefix}-ProfileId
+  TransformerId:
+    Value:
+      Ref: B2BiTransformer
+    Export:
+      Name:
+        Fn::Sub: ${Prefix}-TransformerId
+  CapabilityId:
+    Value:
+      Ref: B2BiCapability
+    Export:
+      Name:
+        Fn::Sub: ${Prefix}-CapabilityId
+  PartnershipId:
+    Value:
+      Ref: B2BiPartnership
+    Export:
+      Name:
+        Fn::Sub: ${Prefix}-PartnershipId
+  S3BucketName:
+    Value:
+      Ref: B2BiS3Bucket
+    Export:
+      Name:
+        Fn::Sub: ${Prefix}-S3BucketName

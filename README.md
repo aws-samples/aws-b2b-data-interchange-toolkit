@@ -1,11 +1,6 @@
-## My Project
+## Description
 
-TODO: Fill this README out!
-
-Be sure to:
-
-* Change the title in this README
-* Edit your repository description on GitHub
+This package is designed for public hosting purposes related to AWS B2B Data Interchange.
 
 ## Security
 
