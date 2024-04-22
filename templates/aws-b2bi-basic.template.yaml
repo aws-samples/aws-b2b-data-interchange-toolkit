@@ -290,6 +290,11 @@ Resources:
       NotificationConfiguration:
         EventBridgeConfiguration:
           EventBridgeEnabled: true
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W35
+            reason: "Access logging is intentionally disabled for this bucket to reduce operational costs."
   B2BiS3BucketPolicy:
     Type: AWS::S3::BucketPolicy
     DeletionPolicy: Delete
