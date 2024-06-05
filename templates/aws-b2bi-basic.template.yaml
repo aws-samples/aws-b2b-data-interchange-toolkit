@@ -425,6 +425,11 @@ Outputs:
     Export:
       Name:
         Fn::Sub: ${Prefix}-PartnershipId
+  TradingPartnerId:
+    Value: !GetAtt B2BiPartnership.TradingPartnerId
+    Export:
+      Name:
+        Fn::Sub: ${Prefix}-TradingPartnerId
   S3BucketName:
     Value:
       Ref: B2BiS3Bucket
