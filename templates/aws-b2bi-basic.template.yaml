@@ -120,6 +120,7 @@ Parameters:
       - VERSION_4010
       - VERSION_4030
       - VERSION_5010
+      - VERSION_5010_HIPAA
     Default: VERSION_4010
   TransformerTemplateTransactionSet:
     Type: String
@@ -192,6 +193,7 @@ Parameters:
       - VERSION_4010
       - VERSION_4030
       - VERSION_5010
+      - VERSION_5010_HIPAA
     Default: VERSION_4010
   CapabilityTransactionSet:
     Type: String
