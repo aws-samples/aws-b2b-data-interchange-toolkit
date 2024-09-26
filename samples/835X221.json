@@ -1,0 +1,242 @@
+{
+  "resourceType": "Bundle",
+  "type": "collection",
+  "entry": [
+    {
+      "resourceType": "PaymentReconciliation",
+      "status": "active",
+      "created": "2019-08-29",
+      "paymentDate": "2019-08-29",
+      "paymentAmount": {
+        "value": 0,
+        "currency": "USD"
+      },
+      "paymentIdentifier": {
+        "system": "https://example.com/identifier",
+        "value": "9999999999-20190829"
+      },
+      "paymentType": {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/payment-type",
+            "code": "payment"
+          }
+        ]
+      },
+      "organization": {
+        "identifier": {
+          "system": "https://example.com/identifier",
+          "value": "DELTA DENTAL OF ABC"
+        }
+      },
+      "requestor": {
+        "identifier": {
+          "system": "https://example.com/identifier",
+          "value": "BAN DDS LLC"
+        },
+        "display": "BAN DDS LLC"
+      }
+    },
+    {
+      "resourceType": "Claim",
+      "status": "active",
+      "type": {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/claim-type",
+            "code": "oral"
+          }
+        ]
+      },
+      "use": "claim",
+      "patient": {
+        "identifier": {
+          "system": "https://example.com/identifier",
+          "value": "XXX123456789"
+        },
+        "display": "TOWNSEND, WILLIAM P"
+      },
+      "created": "2019-03-03",
+      "provider": {
+        "identifier": {
+          "system": "https://example.com/identifier",
+          "value": "98765432111"
+        },
+        "display": "ACME MEDICAL CENTER"
+      },
+      "priority": {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/processpriority",
+            "code": "normal"
+          }
+        ]
+      },
+      "payee": {
+        "type": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/payeetype",
+              "code": "provider"
+            }
+          ]
+        },
+        "party": {
+          "identifier": {
+            "system": "https://example.com/identifier",
+            "value": "98765432111"
+          },
+          "display": "ACME MEDICAL CENTER"
+        }
+      },
+      "careTeam": [
+        {
+          "sequence": 1,
+          "provider": {
+            "identifier": {
+              "system": "https://example.com/identifier",
+              "value": "98765432111"
+            },
+            "display": "ACME MEDICAL CENTER"
+          }
+        }
+      ],
+      "diagnosis": [
+        {
+          "sequence": 1,
+          "diagnosisCodeableConcept": {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/sid/icd-10",
+                "code": "K00"
+              }
+            ]
+          }
+        }
+      ],
+      "insurance": [
+        {
+          "sequence": 1,
+          "focal": true,
+          "coverage": {
+            "reference": "Coverage/example"
+          }
+        }
+      ],
+      "item": [
+        {
+          "sequence": 1,
+          "productOrService": {
+            "coding": [
+              {
+                "system": "http://example.org/fhir/CodeSystem/ex-dental",
+                "code": "05090256390"
+              }
+            ]
+          },
+          "unitPrice": {
+            "value": 500,
+            "currency": "USD"
+          },
+          "net": {
+            "value": 500,
+            "currency": "USD"
+          }
+        }
+      ],
+      "total": {
+        "value": 500,
+        "currency": "USD"
+      }
+    },
+    {
+      "resourceType": "ClaimResponse",
+      "status": "active",
+      "type": {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/claim-type",
+            "code": "oral"
+          }
+        ]
+      },
+      "use": "claim",
+      "patient": {
+        "identifier": {
+          "system": "https://example.com/identifier",
+          "value": "XXX123456789"
+        },
+        "display": "TOWNSEND, WILLIAM P"
+      },
+      "created": "2019-03-04",
+      "insurer": {
+        "identifier": {
+          "system": "https://example.com/identifier",
+          "value": "DELTA DENTAL OF ABC"
+        }
+      },
+      "outcome": "complete",
+      "disposition": "Claim settled as per contract.",
+      "payeeType": {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/payeetype",
+            "code": "provider"
+          }
+        ]
+      },
+      "item": [
+        {
+          "itemSequence": 1,
+          "adjudication": [
+            {
+              "category": {
+                "coding": [
+                  {
+                    "system": "http://terminology.hl7.org/CodeSystem/adjudication",
+                    "code": "benefit"
+                  }
+                ]
+              },
+              "amount": {
+                "value": 0,
+                "currency": "USD"
+              }
+            }
+          ]
+        }
+      ],
+      "total": [
+        {
+          "category": {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/adjudication",
+                "code": "benefit"
+              }
+            ]
+          },
+          "amount": {
+            "value": 0,
+            "currency": "USD"
+          }
+        }
+      ],
+      "payment": {
+        "type": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/ex-paymenttype",
+              "code": "complete"
+            }
+          ]
+        },
+        "date": "2019-08-29",
+        "amount": {
+          "value": 0,
+          "currency": "USD"
+        }
+      }
+    }
+  ]
+}
