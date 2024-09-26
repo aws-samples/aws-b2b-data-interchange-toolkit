@@ -1,0 +1,195 @@
+{
+  "Sender": "ROADONE        ",
+  "Receiver": "AMAZON         ",
+  "Interchange Control Number": "000001011",
+  "Shipment Identification Numbers": [
+    "10100806",
+    "9920267",
+    "9917992",
+    "9917992",
+    "9920267",
+    "10100806",
+    "10100394",
+    "10100394"
+  ],
+  "Shipment count": 8,
+  "Transaction identifiers": "214",
+  "Transactions": [
+    {
+      "Identifier code": "214",
+      "Control number": "5598",
+      "Carrier Shipment Status Message": {
+        "Shipment Identification Number": "10100806",
+        "Standard Carrier Alpha Code": "RKNE",
+        "Bill of Landing Number": "MAEU219197654",
+        "Buyer's Shipment Mark Number": "NoARN",
+        "Status Indicator": "LY",
+        "Status Reason Code": "NS",
+        "Date": "20220920",
+        "Time": "0202",
+        "TimeZone": "PT",
+        "Location": {
+          "City": "PORT WENTWORTH",
+          "State": "GA",
+          "Country": "USA"
+        },
+        "Equipment Number": "118057",
+        "Equipment Code": "TL"
+      }
+    },
+    {
+      "Identifier code": "214",
+      "Control number": "5599",
+      "Carrier Shipment Status Message": {
+        "Shipment Identification Number": "9920267",
+        "Standard Carrier Alpha Code": "RKNE",
+        "Bill of Landing Number": "ZIMUSHH033017689",
+        "Buyer's Shipment Mark Number": "112K9V6WS",
+        "Status Indicator": "LY",
+        "Status Reason Code": "NS",
+        "Date": "20220920",
+        "Time": "0202",
+        "TimeZone": "PT",
+        "Location": {
+          "City": "PORT WENTWORTH",
+          "State": "GA",
+          "Country": "USA"
+        },
+        "Equipment Number": "892870",
+        "Equipment Code": "TL"
+      }
+    },
+    {
+      "Identifier code": "214",
+      "Control number": "5600",
+      "Carrier Shipment Status Message": {
+        "Shipment Identification Number": "9917992",
+        "Standard Carrier Alpha Code": "RKNE",
+        "Bill of Landing Number": "MAEU219196179",
+        "Buyer's Shipment Mark Number": "112FW5X93",
+        "Status Indicator": "LY",
+        "Status Reason Code": "NS",
+        "Date": "20220920",
+        "Time": "0202",
+        "TimeZone": "PT",
+        "Location": {
+          "City": "PORT WENTWORTH",
+          "State": "GA",
+          "Country": "USA"
+        },
+        "Equipment Number": "530459",
+        "Equipment Code": "TL"
+      }
+    },
+    {
+      "Identifier code": "214",
+      "Control number": "5601",
+      "Carrier Shipment Status Message": {
+        "Shipment Identification Number": "9917992",
+        "Standard Carrier Alpha Code": "RKNE",
+        "Bill of Landing Number": "MAEU219196179",
+        "Buyer's Shipment Mark Number": "112FW5X93",
+        "Status Indicator": "RD",
+        "Status Reason Code": "NS",
+        "Date": "20220920",
+        "Time": "0203",
+        "TimeZone": "PT",
+        "Location": {
+          "City": "SAVANNAH",
+          "State": "GA",
+          "Country": "USA"
+        },
+        "Equipment Number": "530459",
+        "Equipment Code": "TL"
+      }
+    },
+    {
+      "Identifier code": "214",
+      "Control number": "5602",
+      "Carrier Shipment Status Message": {
+        "Shipment Identification Number": "9920267",
+        "Standard Carrier Alpha Code": "RKNE",
+        "Bill of Landing Number": "ZIMUSHH033017689",
+        "Buyer's Shipment Mark Number": "112K9V6WS",
+        "Status Indicator": "RD",
+        "Status Reason Code": "NS",
+        "Date": "20220920",
+        "Time": "0203",
+        "TimeZone": "PT",
+        "Location": {
+          "City": "SAVANNAH",
+          "State": "GA",
+          "Country": "USA"
+        },
+        "Equipment Number": "892870",
+        "Equipment Code": "TL"
+      }
+    },
+    {
+      "Identifier code": "214",
+      "Control number": "5603",
+      "Carrier Shipment Status Message": {
+        "Shipment Identification Number": "10100806",
+        "Standard Carrier Alpha Code": "RKNE",
+        "Bill of Landing Number": "MAEU219197654",
+        "Buyer's Shipment Mark Number": "NoARN",
+        "Status Indicator": "RD",
+        "Status Reason Code": "NS",
+        "Date": "20220920",
+        "Time": "0203",
+        "TimeZone": "PT",
+        "Location": {
+          "City": "SAVANNAH",
+          "State": "GA",
+          "Country": "USA"
+        },
+        "Equipment Number": "118057",
+        "Equipment Code": "TL"
+      }
+    },
+    {
+      "Identifier code": "214",
+      "Control number": "5604",
+      "Carrier Shipment Status Message": {
+        "Shipment Identification Number": "10100394",
+        "Standard Carrier Alpha Code": "RKNE",
+        "Bill of Landing Number": "MAEU219183734",
+        "Buyer's Shipment Mark Number": "NoARN",
+        "Status Indicator": "LY",
+        "Status Reason Code": "NS",
+        "Date": "20220920",
+        "Time": "0203",
+        "TimeZone": "PT",
+        "Location": {
+          "City": "PORT WENTWORTH",
+          "State": "GA",
+          "Country": "USA"
+        },
+        "Equipment Number": "112298",
+        "Equipment Code": "TL"
+      }
+    },
+    {
+      "Identifier code": "214",
+      "Control number": "5605",
+      "Carrier Shipment Status Message": {
+        "Shipment Identification Number": "10100394",
+        "Standard Carrier Alpha Code": "RKNE",
+        "Bill of Landing Number": "MAEU219183734",
+        "Buyer's Shipment Mark Number": "NoARN",
+        "Status Indicator": "RD",
+        "Status Reason Code": "NS",
+        "Date": "20220920",
+        "Time": "0204",
+        "TimeZone": "PT",
+        "Location": {
+          "City": "SAVANNAH",
+          "State": "GA",
+          "Country": "USA"
+        },
+        "Equipment Number": "112298",
+        "Equipment Code": "TL"
+      }
+    }
+  ]
+}
