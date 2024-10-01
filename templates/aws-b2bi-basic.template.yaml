@@ -190,6 +190,7 @@ Parameters:
       - X12_837_X292
       - X12_837_X298
       - X12_999_X231
+      - X12_999_X222
     Default: X12_214
   TransformerFileFormat:
     Type: String
