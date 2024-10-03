@@ -2,7 +2,7 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: >-
   This template creates all AWS B2Bi resources, including a profile, active transformer, capability, and partnership. This template also
-  creates an S3 bucket with all neccessary permissions and settings for your capability.
+  creates an S3 bucket with all necessary permissions and settings for your capability.
   **WARNING** You will be billed for the AWS resources used if you create a stack from this template.
 
 Metadata:
@@ -19,23 +19,48 @@ Metadata:
       - Label:
           default: Transformer
         Parameters:
-          - TransformerName
-          - TransformerTemplateVersion
-          - TransformerTemplateTransactionSet
-          - TransformerFileFormat
-          - TransformerMappingTemplate
+          - InboundTransformerName
+          - InboundTransformerTemplateVersion
+          - InboundTransformerTemplateTransactionSet
+          - InputConversionFromFormat
+          - OutboundTransformerName
+          - OutboundTransformerTemplateVersion
+          - OutboundTransformerTemplateTransactionSet
+          - OutputConversionToFormat
+          - TemplateLanguage
+          - InboundMappingTemplate
+          - OutboundMappingTemplate
+          - SampleDocuments
       - Label:
           default: Capability
         Parameters:
-          - CapabilityName
-          - CapabilityVersion
-          - CapabilityTransactionSet
+          - InboundCapabilityName
+          - InboundCapabilityVersion
+          - InboundCapabilityTransactionSet
           - CapabilityS3BucketName
+          - InboundCapabilityDirection
+          - OutboundCapabilityDirection
+          - OutboundCapabilityName
+          - OutboundCapabilityVersion
+          - OutboundCapabilityTransactionSet
       - Label:
           default: Partnership
         Parameters:
           - PartnershipName
           - PartnershipEmail
+          - ComponentSeparator
+          - DataElementSeparator
+          - SegmentTerminator
+          - ApplicationSenderCode
+          - ApplicationReceiverCode
+          - ResponsibleAgencyCode
+          - SenderIdQualifier
+          - SenderId
+          - ReceiverIdQualifier
+          - ReceiverId
+          - AcknowledgmentRequestedCode
+          - UsageIndicatorCode
+          - ValidateEdi
       - Label:
           default: General
         Parameters:
@@ -51,28 +76,78 @@ Metadata:
         default: Primary phone number
       ProfileLogging:
         default: Logging
-      TransformerName:
-        default: Transformer name
-      TransformerTemplateVersion:
-        default: Version
-      TransformerTemplateTransactionSet:
-        default: EDI document number
-      TransformerFileFormat:
-        default: Document format
-      TransformerMappingTemplate:
-        default: Mapping template
-      CapabilityName:
-        default: Capability name
-      CapabilityVersion:
-        default: Version
-      CapabilityTransactionSet:
-        default: EDI document number
+      InboundTransformerName:
+        default: Inbound Transformer name
+      InboundTransformerTemplateVersion:
+        default: Inbound Transformer EDI version
+      InboundTransformerTemplateTransactionSet:
+        default: Inbound Transformer EDI transaction set
+      OutboundTransformerName:
+        default: Outbound Transformer name
+      OutboundTransformerTemplateVersion:
+        default: Outbound Transformer EDI version
+      OutboundTransformerTemplateTransactionSet:
+        default: Outbound Transformer EDI transaction set
+      InputConversionFromFormat:
+        default: Input conversion format
+      OutputConversionToFormat:
+        default: Output conversion format
+      TemplateLanguage:
+        default: Mapping language
+      InboundMappingTemplate:
+        default: Inbound Mapping template
+      InboundCapabilityName:
+        default: Inbound Capability name
+      InboundCapabilityVersion:
+        default: Inbound Capability EDI version
+      InboundCapabilityTransactionSet:
+        default: Inbound Capability EDI transaction set
+      OutboundCapabilityName:
+        default: Outbound Capability name
+      OutboundCapabilityVersion:
+        default: Outbound Capability EDI version
+      OutboundCapabilityTransactionSet:
+        default: Outbound Capability EDI transaction set
+      OutboundMappingTemplate:
+        default: Outbound Mapping template
       CapabilityS3BucketName:
-        default: Name of S3 bucket used by capability
+        default: Capability S3 bucket name
+      InboundCapabilityDirection:
+        default: Capability direction
+      OutboundCapabilityDirection:
+        default: Capability direction
       PartnershipName:
         default: Partnership name
       PartnershipEmail:
-        default: Business email address
+        default: Partnership email
+      ComponentSeparator:
+        default: Component separator for X12 EDI (special characters allowed)
+      DataElementSeparator:
+        default: Data element separator for X12 EDI (special characters allowed)
+      SegmentTerminator:
+        default: Segment terminator for X12 EDI (special characters allowed)
+      ApplicationSenderCode:
+        default: Application Sender Code (GS-02)
+      ApplicationReceiverCode:
+        default: Application Receiver Code (GS-03)
+      ResponsibleAgencyCode:
+        default: Responsible Agency Code (GS-07)
+      SenderIdQualifier:
+        default: Sender ID Qualifier (ISA-05)
+      SenderId:
+        default: Sender ID (ISA-06)
+      ReceiverIdQualifier:
+        default: Receiver ID Qualifier (ISA-07)
+      ReceiverId:
+        default: Receiver ID (ISA-08)
+      AcknowledgmentRequestedCode:
+        default: Acknowledgment Requested Code (ISA-14)
+      UsageIndicatorCode:
+        default: Usage Indicator Code (ISA-15)
+      ValidateEdi:
+        default: Whether to validate EDI (optional)
+      Prefix:
+        default: Resource name prefix
 
 Parameters:
   ProfileName:
@@ -108,23 +183,47 @@ Parameters:
       - ENABLED
       - DISABLED
     Default: ENABLED
-  TransformerName:
+  InboundTransformerName:
     Type: String
-    Description: Name the transformer. This field cannot be edited later.
+    Description: Name the Inbound transformer. This field cannot be edited later.
     AllowedPattern: ^[a-zA-Z0-9_-]{1,512}$
-    Default: MyB2BiTransformer
-  TransformerTemplateVersion:
+    Default: B2BiInboundTransformer
+  OutboundTransformerName:
     Type: String
-    Description: X12 version.
+    Description: Name the Outbound transformer. This field cannot be edited later.
+    AllowedPattern: ^[a-zA-Z0-9_-]{1,512}$
+    Default: B2BiOutboundTransformer
+  InputConversionFromFormat:
+    Type: String
+    Description: Input conversion format.
+    AllowedValues:
+      - X12
+    Default: X12
+  OutputConversionToFormat:
+    Type: String
+    Description: Output conversion format.
+    AllowedValues:
+      - X12
+    Default: X12
+  TemplateLanguage:
+    Type: String
+    Description: The language used for mapping (JSONATA or XSLT).
+    AllowedValues:
+      - JSONATA
+      - XSLT
+    Default: JSONATA
+  InboundTransformerTemplateVersion:
+    Type: String
+    Description: Inbound Transformer EDI X12 version.
     AllowedValues:
       - VERSION_4010
       - VERSION_4030
       - VERSION_5010
       - VERSION_5010_HIPAA
     Default: VERSION_4010
-  TransformerTemplateTransactionSet:
+  InboundTransformerTemplateTransactionSet:
     Type: String
-    Description: EDI document number.
+    Description: Inbound Transformer EDI document number.
     AllowedValues:
       - X12_110
       - X12_180
@@ -191,36 +290,120 @@ Parameters:
       - X12_837_X298
       - X12_999_X231
     Default: X12_214
-  TransformerFileFormat:
+  OutboundTransformerTemplateVersion:
     Type: String
-    Description: File format to convert EDI document into.
+    Description: Outbound Transformer EDI X12 version.
     AllowedValues:
-      - JSON
-      - XML
-    Default: JSON
-  TransformerMappingTemplate:
+      - VERSION_4010
+      - VERSION_4030
+      - VERSION_5010
+      - VERSION_5010_HIPAA
+    Default: VERSION_4010
+  OutboundTransformerTemplateTransactionSet:
     Type: String
-    Description: Template to map your input to the desired output.
+    Description: Outbound Transformer EDI document number.
+    AllowedValues:
+      - X12_110
+      - X12_180
+      - X12_204
+      - X12_210
+      - X12_211
+      - X12_214
+      - X12_215
+      - X12_269
+      - X12_270
+      - X12_271
+      - X12_274
+      - X12_275
+      - X12_276
+      - X12_277
+      - X12_278
+      - X12_310
+      - X12_315
+      - X12_322
+      - X12_404
+      - X12_410
+      - X12_810
+      - X12_820
+      - X12_824
+      - X12_830
+      - X12_832
+      - X12_834
+      - X12_835
+      - X12_837
+      - X12_846
+      - X12_850
+      - X12_852
+      - X12_855
+      - X12_856
+      - X12_860
+      - X12_861
+      - X12_864
+      - X12_865
+      - X12_940
+      - X12_990
+      - X12_997
+      - X12_999
+      - X12_270_X279
+      - X12_271_X279
+      - X12_275_X210
+      - X12_275_X211
+      - X12_276_X212
+      - X12_277_X212
+      - X12_277_X214
+      - X12_277_X364
+      - X12_278_X217
+      - X12_820_X218
+      - X12_820_X306
+      - X12_824_X186
+      - X12_834_X220
+      - X12_834_X307
+      - X12_834_X318
+      - X12_835_X221
+      - X12_837_X222
+      - X12_837_X223
+      - X12_837_X224
+      - X12_837_X291
+      - X12_837_X292
+      - X12_837_X298
+      - X12_999_X231
+    Default: X12_850
+  InboundMappingTemplate:
+    Type: String
+    Description: Inbound Template to map your input to the desired output.
     MinLength: 0
     MaxLength: 350000
-  CapabilityName:
+    Default: mapping template
+  OutboundMappingTemplate:
     Type: String
-    Description: Capability name.
+    Description: Outbound Template to map your input to the desired output.
+    MinLength: 0
+    MaxLength: 350000
+    Default: mapping template
+  InboundCapabilityName:
+    Type: String
+    Description: Inbound Capability name.
     MinLength: 1
     MaxLength: 254
-    Default: My B2Bi Capability
-  CapabilityVersion:
+    Default: My B2Bi Inbound Capability
+  OutboundCapabilityName:
     Type: String
-    Description: X12 version
+    Description: Outbound Capability name.
+    MinLength: 1
+    MaxLength: 254
+    Default: My B2Bi Outbound Capability
+  InboundCapabilityVersion:
+    Type: String
+    Description: Inbound Capability X12 EDI version
     AllowedValues:
       - VERSION_4010
       - VERSION_4030
       - VERSION_5010
       - VERSION_5010_HIPAA
     Default: VERSION_4010
-  CapabilityTransactionSet:
+  InboundCapabilityTransactionSet:
     Type: String
-    Description: EDI document number.
+    Description: Inbound Capability X12 EDI document number.
     AllowedValues:
       - X12_110
       - X12_180
@@ -287,12 +470,104 @@ Parameters:
       - X12_837_X298
       - X12_999_X231
     Default: X12_214
+  OutboundCapabilityVersion:
+    Type: String
+    Description: Outbound Capability EDI X12 version
+    AllowedValues:
+      - VERSION_4010
+      - VERSION_4030
+      - VERSION_5010
+      - VERSION_5010_HIPAA
+    Default: VERSION_4010
+  OutboundCapabilityTransactionSet:
+    Type: String
+    Description: Outbound Capability EDI document number.
+    AllowedValues:
+      - X12_110
+      - X12_180
+      - X12_204
+      - X12_210
+      - X12_211
+      - X12_214
+      - X12_215
+      - X12_269
+      - X12_270
+      - X12_271
+      - X12_274
+      - X12_275
+      - X12_276
+      - X12_277
+      - X12_278
+      - X12_310
+      - X12_315
+      - X12_322
+      - X12_404
+      - X12_410
+      - X12_810
+      - X12_820
+      - X12_824
+      - X12_830
+      - X12_832
+      - X12_834
+      - X12_835
+      - X12_837
+      - X12_846
+      - X12_850
+      - X12_852
+      - X12_855
+      - X12_856
+      - X12_860
+      - X12_861
+      - X12_864
+      - X12_865
+      - X12_940
+      - X12_990
+      - X12_997
+      - X12_999
+      - X12_270_X279
+      - X12_271_X279
+      - X12_275_X210
+      - X12_275_X211
+      - X12_276_X212
+      - X12_277_X212
+      - X12_277_X214
+      - X12_277_X364
+      - X12_278_X217
+      - X12_820_X218
+      - X12_820_X306
+      - X12_824_X186
+      - X12_834_X220
+      - X12_834_X307
+      - X12_834_X318
+      - X12_835_X221
+      - X12_837_X222
+      - X12_837_X223
+      - X12_837_X224
+      - X12_837_X291
+      - X12_837_X292
+      - X12_837_X298
+      - X12_999_X231
+    Default: X12_850
   CapabilityS3BucketName:
     Type: String
     Description: Name of S3 bucket that will be created and used for capability.
     MinLength: 3
     MaxLength: 63
     Default: my-b2bi-bucket
+  InboundCapabilityDirection:
+    Type: String
+    Description: Direction of Capability.
+    AllowedValues:
+      - INBOUND
+      - OUTBOUND
+    Default: INBOUND
+  OutboundCapabilityDirection:
+    Type: String
+    Description: Direction of Capability.
+    AllowedValues:
+      - INBOUND
+      - OUTBOUND
+    Default: OUTBOUND
   PartnershipName:
     Type: String
     Description: Partnership name.
@@ -306,6 +581,81 @@ Parameters:
     MinLength: 5
     MaxLength: 254
     Default: john@businessdomain.com
+  ValidateEdi:
+    Type: String
+    AllowedValues: [ "true", "false", "" ]
+    Description: "Whether to validate EDI (optional)"
+  ApplicationSenderCode:
+    Type: String
+    Description: Application Sender Code (GS-02)
+    AllowedPattern: "^$|^[a-zA-Z0-9]{2,15}$"
+    Default: ""
+  ApplicationReceiverCode:
+    Type: String
+    Description: Application Receiver Code (GS-03)
+    AllowedPattern: "^$|^[a-zA-Z0-9]{2,15}$"
+    Default: ""
+  ResponsibleAgencyCode:
+    Type: String
+    Description: Responsible Agency Code (GS-07)
+    AllowedPattern: "^[a-zA-Z0-9]*$"
+    MaxLength: 2
+    Default: ""
+  SenderIdQualifier:
+    Type: String
+    Description: Sender ID Qualifier (ISA-05)
+    AllowedPattern: "^[a-zA-Z0-9]*${2}$"
+    Default: ""
+  SenderId:
+    Type: String
+    Description: Sender ID (ISA-06)
+    AllowedPattern: "^$|^[a-zA-Z0-9]{15}$"
+    Default: ""
+  ReceiverIdQualifier:
+    Type: String
+    Description: Receiver ID Qualifier (ISA-07)
+    AllowedPattern: "^[a-zA-Z0-9]*${2}$"
+    Default: ""
+  ReceiverId:
+    Type: String
+    Description: Receiver ID (ISA-08)
+    AllowedPattern: "^[a-zA-Z0-9]*${15}$"
+    MaxLength: 15
+    Default: ""
+  AcknowledgmentRequestedCode:
+    Type: String
+    Description: Acknowledgment Requested Code (ISA-14)
+    AllowedPattern: "^[a-zA-Z0-9]*$"
+    MaxLength: 1
+    Default: ""
+  UsageIndicatorCode:
+    Type: String
+    Description: Usage Indicator Code (ISA-15)
+    AllowedPattern: "^[a-zA-Z0-9]*$"
+    MaxLength: 1
+    Default: ""
+  ComponentSeparator:
+    Type: String
+    Description: "Component separator for X12 EDI (special characters allowed)"
+    AllowedPattern: "^$|^[!&'()*+,\\-./:;?=%@\\[\\]_{}|<>~^`\"]$"
+    MaxLength: 1
+    Default: ""
+  DataElementSeparator:
+    Type: String
+    Description: "Data element separator for X12 EDI (special characters allowed)"
+    AllowedPattern: "^$|^[!&'()*+,\\-./:;?=%@\\[\\]_{}|<>~^`\"]$"
+    MaxLength: 1
+    Default: ""
+  SegmentTerminator:
+    Type: String
+    Description: "Segment terminator for X12 EDI (special characters allowed)"
+    AllowedPattern: "^$|^[!&'()*+,\\-./:;?=%@\\[\\]_{}|<>~^`\"]$"
+    MaxLength: 1
+    Default: ""
+  CapabilityOptions:
+    Type: String
+    Description: 'Capability options as a JSON string or leave blank for none.'
+    Default: ""
   Prefix:
     Type: String
     Description: Unique name prefix for resources that are created by the stack.
@@ -314,6 +664,32 @@ Parameters:
     MinLength: 1
     MaxLength: 30
     Default: b2bi
+
+Conditions:
+  HasCapabilityOptions: !Not [!Equals [!Ref CapabilityOptions, ""]]
+  HasFunctionalGroupHeaders: !And
+    - !Not [ !Equals [ !Ref ApplicationSenderCode, "" ] ]
+    - !Not [ !Equals [ !Ref ApplicationReceiverCode, "" ] ]
+    - !Not [ !Equals [ !Ref ResponsibleAgencyCode, "" ] ]
+  HasInterchangeControlHeaders: !And
+    - !Not [ !Equals [ !Ref SenderIdQualifier, "" ] ]
+    - !Not [ !Equals [ !Ref SenderId, "" ] ]
+    - !Not [ !Equals [ !Ref ReceiverIdQualifier, "" ] ]
+    - !Not [ !Equals [ !Ref ReceiverId, "" ] ]
+  HasValidateEdi: !Not [ !Equals [ !Ref ValidateEdi, "" ] ]
+  AllDelimitersProvided: !And
+    - !Not [ !Equals [ !Ref ComponentSeparator, "" ] ]
+    - !Not [ !Equals [ !Ref DataElementSeparator, "" ] ]
+    - !Not [ !Equals [ !Ref SegmentTerminator, "" ] ]
+  AllDelimitersNone: !And
+    - !Equals [ !Ref ComponentSeparator, "" ]
+    - !Equals [ !Ref DataElementSeparator, "" ]
+    - !Equals [ !Ref SegmentTerminator, "" ]
+  ValidDelimitersCondition: !Or
+    - !Condition AllDelimitersProvided
+    - !Condition AllDelimitersNone
+  HasAcknowledgmentRequestedCode: !Not [!Equals [!Ref AcknowledgmentRequestedCode, ""]]
+  HasUsageIndicatorCode: !Not [!Equals [!Ref UsageIndicatorCode, ""]]
 
 Resources:
   B2BiS3Bucket:
@@ -360,7 +736,8 @@ Resources:
               - s3:GetObject
               - s3:GetObjectAttributes
             Resource:
-              Fn::Sub: arn:aws:s3:::${B2BiS3Bucket}/inputs/*
+              - Fn::Sub: arn:aws:s3:::${B2BiS3Bucket}/inbound/input/*
+              - Fn::Sub: arn:aws:s3:::${B2BiS3Bucket}/outbound/input/*
             Condition:
               StringEquals:
                 aws:SourceAccount:
@@ -374,7 +751,8 @@ Resources:
               - s3:PutObject
               - s3:AbortMultipartUpload
             Resource:
-              Fn::Sub: arn:aws:s3:::${B2BiS3Bucket}/outputs/*
+              - Fn::Sub: arn:aws:s3:::${B2BiS3Bucket}/inbound/outputs/*
+              - Fn::Sub: arn:aws:s3:::${B2BiS3Bucket}/outbound/outputs/*
             Condition:
               StringEquals:
                 aws:SourceAccount:
@@ -394,59 +772,170 @@ Resources:
       Logging:
         Ref: ProfileLogging
 
-  B2BiTransformer:
+  B2BiInboundTransformer:
     Type: AWS::B2BI::Transformer
     Properties:
       Name:
-        Ref: TransformerName
-      FileFormat:
-        Ref: TransformerFileFormat
-      MappingTemplate:
-        Ref: TransformerMappingTemplate
+        Ref: InboundTransformerName
+      InputConversion:
+        FromFormat:
+          Ref: InputConversionFromFormat
+        FormatOptions:
+          X12:
+            TransactionSet:
+              Ref: InboundTransformerTemplateTransactionSet
+            Version:
+              Ref: InboundTransformerTemplateVersion
+      Mapping:
+        TemplateLanguage:
+          Ref: TemplateLanguage
+        Template:
+          Ref: InboundMappingTemplate
+      SampleDocuments:
+        BucketName:
+          Ref: B2BiS3Bucket
+        Keys:
+          - Input: "inbound/input/input.txt"
+          - Output: "inbound/output/output.txt"
       Status: active
-      EdiType:
-        X12Details:
-          Version:
-            Ref: TransformerTemplateVersion
-          TransactionSet:
-            Ref: TransformerTemplateTransactionSet
 
-  B2BiCapability:
+  B2BiOutboundTransformer:
+    Type: AWS::B2BI::Transformer
+    Properties:
+      Name:
+        Ref: OutboundTransformerName
+      Mapping:
+        TemplateLanguage:
+          Ref: TemplateLanguage
+        Template:
+          Ref: OutboundMappingTemplate
+      OutputConversion:
+        ToFormat:
+          Ref: OutputConversionToFormat
+        FormatOptions:
+          X12:
+            TransactionSet:
+              Ref: OutboundTransformerTemplateTransactionSet
+            Version:
+              Ref: OutboundTransformerTemplateVersion
+      SampleDocuments:
+        BucketName:
+          Ref: B2BiS3Bucket
+        Keys:
+          - Input: "outbound/input/input.txt"
+            Output: "outbound/output/output.txt"
+      Status: active
+
+  B2BiInboundCapability:
     Type: AWS::B2BI::Capability
     Properties:
       Name:
-        Ref: CapabilityName
+        Ref: InboundCapabilityName
       Type: edi
       Configuration:
         Edi:
           Type:
             X12Details:
               TransactionSet:
-                Ref: CapabilityTransactionSet
+                Ref: InboundCapabilityTransactionSet
               Version:
-                Ref: CapabilityVersion
+                Ref: InboundCapabilityVersion
           InputLocation:
             BucketName:
               Ref: B2BiS3Bucket
-            Key: inputs
+            Key: inbound/input/
           OutputLocation:
             BucketName:
               Ref: B2BiS3Bucket
-            Key: outputs
+            Key: inbound/output/
           TransformerId:
-            Ref: B2BiTransformer
+            Ref: B2BiInboundTransformer
+          CapabilityDirection:
+            Ref: InboundCapabilityDirection
+
+  B2BiOutboundCapability:
+    Type: AWS::B2BI::Capability
+    Properties:
+      Name:
+        Ref: OutboundCapabilityName
+      Type: edi
+      Configuration:
+        Edi:
+          Type:
+            X12Details:
+              TransactionSet:
+                Ref: OutboundCapabilityTransactionSet
+              Version:
+                Ref: OutboundCapabilityVersion
+          InputLocation:
+            BucketName:
+              Ref: B2BiS3Bucket
+            Key: outbound/input/
+          OutputLocation:
+            BucketName:
+              Ref: B2BiS3Bucket
+            Key: outbound/output/
+          TransformerId:
+            Ref: B2BiOutboundTransformer
+          CapabilityDirection:
+            Ref: OutboundCapabilityDirection
 
   B2BiPartnership:
     Type: AWS::B2BI::Partnership
     Properties:
       Capabilities:
-        - Ref: B2BiCapability
+        - Ref: B2BiOutboundCapability
+        - Ref: B2BiInboundCapability
       Email:
         Ref: PartnershipEmail
       Name:
         Ref: PartnershipName
       ProfileId:
         Ref: B2BiProfile
+      CapabilityOptions:
+        Fn::If:
+          - HasCapabilityOptions
+          - OutboundEdi:
+              X12:
+                Common:
+                  Delimiters:
+                    Fn::If:
+                      - ValidDelimitersCondition
+                      - ComponentSeparator: !Ref ComponentSeparator
+                        DataElementSeparator: !Ref DataElementSeparator
+                        SegmentTerminator: !Ref SegmentTerminator
+                      - !Ref "AWS::NoValue"
+                  ValidateEdi:
+                    Fn::If:
+                      - HasValidateEdi
+                      - !Ref ValidateEdi
+                      - !Ref "AWS::NoValue"
+                  FunctionalGroupHeaders:
+                    Fn::If:
+                      - HasFunctionalGroupHeaders
+                      - ApplicationSenderCode: !Ref ApplicationSenderCode
+                        ApplicationReceiverCode: !Ref ApplicationReceiverCode
+                        ResponsibleAgencyCode: !Ref ResponsibleAgencyCode
+                      - !Ref "AWS::NoValue"
+                  InterchangeControlHeaders:
+                    Fn::If:
+                      - HasInterchangeControlHeaders
+                      - SenderIdQualifier: !Ref SenderIdQualifier
+                        SenderId: !Ref SenderId
+                        ReceiverIdQualifier: !Ref ReceiverIdQualifier
+                        ReceiverId: !Ref ReceiverId
+                        AcknowledgmentRequestedCode:
+                          Fn::If:
+                            - HasAcknowledgmentRequestedCode
+                            - !Ref AcknowledgmentRequestedCode
+                            - !Ref "AWS::NoValue"
+                        UsageIndicatorCode:
+                          Fn::If:
+                            - HasUsageIndicatorCode
+                            - !Ref UsageIndicatorCode
+                            - !Ref "AWS::NoValue"
+                      - !Ref "AWS::NoValue"
+          - !Ref "AWS::NoValue"
 
 Outputs:
   ProfileId:
@@ -455,18 +944,30 @@ Outputs:
     Export:
       Name:
         Fn::Sub: ${Prefix}-ProfileId
-  TransformerId:
+  OutboundTransformerId:
     Value:
-      Ref: B2BiTransformer
+      Ref: B2BiOutboundTransformer
     Export:
       Name:
-        Fn::Sub: ${Prefix}-TransformerId
-  CapabilityId:
+        Fn::Sub: ${Prefix}-Outbound-TransformerId
+  InboundTransformerId:
     Value:
-      Ref: B2BiCapability
+      Ref: B2BiInboundTransformer
     Export:
       Name:
-        Fn::Sub: ${Prefix}-CapabilityId
+        Fn::Sub: ${Prefix}-Inbound-TransformerId
+  OutboundCapabilityId:
+    Value:
+      Ref: B2BiOutboundCapability
+    Export:
+      Name:
+        Fn::Sub: ${Prefix}-Outbound-CapabilityId
+  InboundCapabilityId:
+    Value:
+      Ref: B2BiInboundCapability
+    Export:
+      Name:
+        Fn::Sub: ${Prefix}-Inbound-CapabilityId
   PartnershipId:
     Value:
       Ref: B2BiPartnership
