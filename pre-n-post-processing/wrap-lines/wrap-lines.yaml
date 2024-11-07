@@ -1,0 +1,98 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template to deploy a Lambda function for S3 object processing to line wrap the object content to 80 chars'
+
+Parameters:
+  S3BucketName:
+    Type: String
+    Description: 'Name of the output S3 bucket'
+  S3OutputPrefix:
+    Type: String
+    Description: 'S3 prefix path for processed files'
+
+Resources:
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: S3AccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:AbortMultipartUpload
+                  - s3:ListMultipartUploadParts
+                  - s3:ListBucketMultipartUploads
+                Resource: 
+                  - !Sub 'arn:aws:s3:::${S3BucketName}'
+                  - !Sub 'arn:aws:s3:::${S3BucketName}/*'
+
+  ProcessS3ObjectLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        ZipFile: |
+          import boto3
+          import os
+
+          s3 = boto3.client('s3')
+          output_prefix = os.environ['OUTPUT_PREFIX']
+
+          def handler(event, context):
+              for record in event['Records']:
+                  input_bucket = record['s3']['bucket']['name']
+                  key = record['s3']['object']['key']
+                  
+                  output_key = output_prefix + os.path.basename(key)
+                  local_filename = '/tmp/' + os.path.basename(key)
+                  
+                  # Download file
+                  s3.download_file(input_bucket, key, local_filename)
+                  
+                  # Process file
+                  with open(local_filename, 'rb') as input_file, open('/tmp/output', 'wb') as output_file:
+                      while True:
+                          chunk = input_file.read(80)
+                          if not chunk:
+                              break
+                          output_file.write(chunk)
+                          if len(chunk) == 80:
+                              output_file.write(b'\r\n')
+                  
+                  # Upload processed file
+                  s3.upload_file('/tmp/output', input_bucket, output_key)
+                  
+                  # Clean up
+                  os.remove(local_filename)
+                  os.remove('/tmp/output')
+              
+              return {'statusCode': 200, 'body': 'Processing complete'}
+      Runtime: python3.8
+      Timeout: 900  # Increased to 15 minutes
+      MemorySize: 4096 # Increased for better performance
+      EphemeralStorage:
+        Size: 5120  # Size in MB, can be between 512 and 10240
+      Environment:
+        Variables:
+          OUTPUT_PREFIX: !Ref S3OutputPrefix
+
+Outputs:
+  LambdaFunctionName:
+    Description: 'Name of the created Lambda function'
+    Value: !Ref ProcessS3ObjectLambda
+  S3BucketName:
+    Description: 'Name of the S3 bucket'
+    Value: !Ref S3BucketName
