@@ -1,0 +1,142 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template to deploy a Lambda function for S3 object processing to remove CR/LF'
+
+Parameters:
+  S3BucketName:
+    Type: String
+    Description: 'Name of the output S3 bucket'
+  S3OutputPrefix:
+    Type: String
+    Description: 'S3 prefix path for processed files'
+
+Resources:
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: S3AccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:AbortMultipartUpload
+                  - s3:ListMultipartUploadParts
+                  - s3:ListBucketMultipartUploads
+                Resource: 
+                  - !Sub 'arn:aws:s3:::${S3BucketName}/*'
+
+  ProcessS3ObjectLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        ZipFile: |
+          import boto3
+          import os
+
+          s3 = boto3.client('s3')
+          output_prefix = os.environ['OUTPUT_PREFIX']
+
+          def handler(event, context):
+              for record in event['Records']:
+                  bucket = record['s3']['bucket']['name']
+                  key = record['s3']['object']['key']
+                  
+                  # Create a new key for the processed file
+                  output_key = output_prefix + os.path.basename(key)
+                  
+                  # Start multipart upload
+                  mpu = s3.create_multipart_upload(Bucket=bucket, Key=output_key)
+                  
+                  try:
+                      # Get the object using the key
+                      response = s3.get_object(Bucket=bucket, Key=key)
+                      
+                      part_number = 1
+                      parts = []
+                      
+                      # Process the file content
+                      buffer = b''
+                      for chunk in response['Body'].iter_chunks(chunk_size=8388608):  # 8MB chunks
+                          # Remove CR and LF
+                          filtered_chunk = bytes(b for b in chunk if b not in [10, 13])
+                          buffer += filtered_chunk
+                          
+                          # If buffer size is greater than 5MB, upload as a part
+                          if len(buffer) > 5 * 1024 * 1024:
+                              part = s3.upload_part(
+                                  Bucket=bucket,
+                                  Key=output_key,
+                                  PartNumber=part_number,
+                                  UploadId=mpu['UploadId'],
+                                  Body=buffer
+                              )
+                              parts.append({
+                                  'PartNumber': part_number,
+                                  'ETag': part['ETag']
+                              })
+                              part_number += 1
+                              buffer = b''
+                      
+                      # Upload any remaining data as the last part
+                      if buffer:
+                          part = s3.upload_part(
+                              Bucket=bucket,
+                              Key=output_key,
+                              PartNumber=part_number,
+                              UploadId=mpu['UploadId'],
+                              Body=buffer
+                          )
+                          parts.append({
+                              'PartNumber': part_number,
+                              'ETag': part['ETag']
+                          })
+                      
+                      # Complete the multipart upload
+                      s3.complete_multipart_upload(
+                          Bucket=bucket,
+                          Key=output_key,
+                          UploadId=mpu['UploadId'],
+                          MultipartUpload={'Parts': parts}
+                      )
+                      
+                  except Exception as e:
+                      print(f"Error processing {key}: {str(e)}")
+                      s3.abort_multipart_upload(
+                          Bucket=bucket,
+                          Key=output_key,
+                          UploadId=mpu['UploadId']
+                      )
+                      raise
+                  
+              return {
+                  'statusCode': 200,
+                  'body': 'Processing complete'
+              }
+      Runtime: python3.8
+      Timeout: 900  # Increased to 15 minutes
+      MemorySize: 1024  # Increased for better performance
+      Environment:
+        Variables:
+          OUTPUT_PREFIX: !Ref S3OutputPrefix
+
+Outputs:
+  LambdaFunctionName:
+    Description: 'Name of the created Lambda function'
+    Value: !Ref ProcessS3ObjectLambda
+  S3BucketName:
+    Description: 'Name of the S3 bucket'
+    Value: !Ref S3BucketName

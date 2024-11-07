@@ -1,0 +1,330 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template to deploy a Lambda function for S3 object processing to line wrap the object content to 80 chars'
+
+Parameters:
+  S3BucketName:
+    Type: String
+    Description: 'Name of the output S3 bucket'
+  S3OutputPrefix:
+    Type: String
+    Description: 'S3 prefix path for processed files'
+
+Resources:
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: S3AccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:AbortMultipartUpload
+                  - s3:ListMultipartUploadParts
+                  - s3:ListBucketMultipartUploads
+                Resource: 
+                  - !Sub 'arn:aws:s3:::${S3BucketName}'
+                  - !Sub 'arn:aws:s3:::${S3BucketName}/*'
+
+  ProcessS3ObjectLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: AwsLambdaEdiSplit
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        ZipFile: |
+          const fs = require('fs');
+          const util = require('util');
+          const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
+          const { Readable } = require('stream');
+
+          const s3Client = new S3Client();
+          const outputPrefix = process.env.OUTPUT_PREFIX || '';
+
+
+          async function downloadFromS3(bucketName, key, localPath) {
+            console.log(`Downloading s3://${bucketName}/${key} to ${localPath}`);
+            const objectParams = {
+              Bucket: bucketName,
+              Key: key,
+            };
+
+            const response = await s3Client.send(new GetObjectCommand(objectParams));
+            const writeStream = fs.createWriteStream(localPath);
+
+            if (response.Body instanceof Readable) {
+              return new Promise((resolve, reject) => {
+                response.Body.pipe(writeStream)
+                .on('error', reject)
+                .on('finish', () => {
+                  console.log(`Successfully downloaded to ${localPath}`);
+                  resolve();
+                  });
+                });
+            } else {
+              throw new Error('Response body is not a readable stream');
+            }
+          }
+
+          exports.handler = async (event) => {
+            let state={};
+            state.localpath='';
+            state.outputFileName='';
+            state.transactionCount = 0;
+            state.exit=false;
+
+            try {
+              // Get bucket and key from S3 event
+              const record = event.Records[0];
+              const bucketName = record.s3.bucket.name;
+              const key = decodeURIComponent(record.s3.object.key.replace(/\+/g, ' '));
+              const inputFile = getFilename(key);
+              const downloadPath = `/tmp/${inputFile}`;
+
+              console.log(`Processing file s3://${bucketName}/${key}`);
+
+              // Download file first
+              await downloadFromS3(bucketName, key, downloadPath);
+
+              // Process the downloaded file chunk by chunk
+              const readStream = fs.createReadStream(downloadPath, {
+                highWaterMark: 64 * 1024 // 64KB chunks
+                });
+
+                for await (const chunk of readStream) {
+                  await processChunk(state,chunk, inputFile, bucketName);
+                  if (state.exit) {
+                    throw new Error('Processing error occurred');
+                  }
+                }
+
+                // Clean up downloaded file
+                await fs.promises.unlink(downloadPath);
+
+                return {
+                  statusCode: 200,
+                  body: JSON.stringify({
+                    message: 'File processed successfully',
+                    input: `s3://${bucketName}/${key}`,
+                    transactions: state.transactionCount
+                    })
+                };
+
+              } catch (err) {
+                console.error('Error:', err);
+                throw err;
+              }
+          };
+
+          async function processChunk(state, chunk, inputFile, outputBucketName) {
+            console.log("processing chunk");
+            let gsSegment = '';
+            let GS6 = '123456789';
+            let firstST = true;
+            let inSuffix = false;
+            let currentSegment = '';
+            let gotISA = false;
+            let isaChunk = '';
+            let writer;
+            let isaSegment = '';
+            let elementSeparator = '';
+            let subElementSeparator = '';
+            let segmentTerminator = '';
+            let terminatorSuffix = '';
+            let isaControlNumber = '';
+
+            if (!gotISA) {
+              isaChunk += chunk;
+              if (isaChunk.length < 108) {
+                console.log(`chunk length < 108 ${isaChunk.length}`);
+                return;
+              }
+              isaSegment = isaChunk.toString().substring(0, 108);
+              elementSeparator = isaSegment.charAt(3);
+              subElementSeparator = isaSegment.charAt(104);
+              segmentTerminator = isaSegment.charAt(105);
+              terminatorSuffix = getTerminatorSuffix(isaSegment);
+              isaControlNumber = isaSegment.substring(90, 100);
+
+              if (!isValidSeparator(isaSegment, elementSeparator, [6, 17, 20, 31, 34, 50, 53, 69, 76, 81, 83, 89, 99, 101, 103])) {
+                console.error("ISA Segment Error: Invalid element separator");
+                state.exit = true;
+                return;
+              }
+
+              if (!isValidSegmentTerminator(isaSegment, elementSeparator, subElementSeparator, segmentTerminator)) {
+                  console.error("ISA Segment Error: Invalid segmentterminator");
+                  state.exit = true;
+                  return;
+              }
+
+              isaSegment = isaSegment.substring(0, 106);
+              writer = createOutputFile(inputFile,state);
+
+              chunk = isaChunk;
+              gotISA = true;
+              console.log("got ISA");
+            }
+
+            let chunkStr = chunk.toString();
+            for (let i = 0; i < chunkStr.length; i++) {
+              const ch = chunkStr[i];
+              if (inSuffix && (ch === '\n' || ch === '\r')) {
+                continue;
+              }
+              inSuffix = false;
+              currentSegment += ch;
+
+              if (ch === segmentTerminator) {
+                const segment = currentSegment;
+                currentSegment = '';
+                if (segment.startsWith(`GS${elementSeparator}`)) {
+                  gsSegment = segment;
+                  GS6 = getGSSegmentSixthElement(gsSegment, elementSeparator);
+                }
+                if (segment.startsWith(`ST${elementSeparator}`) || segment.startsWith(`GE${elementSeparator}`)) {
+                  if (!firstST || segment.startsWith(`GE${elementSeparator}`)) {
+                    writer.write(`GE${elementSeparator}1${elementSeparator}${GS6}${segmentTerminator}${terminatorSuffix}`);
+                    writer.write(`IEA${elementSeparator}1${elementSeparator}${isaControlNumber}${segmentTerminator}${terminatorSuffix}`);
+                    writer.end();
+                    await util.promisify(writer.once.bind(writer))('finish');
+                    await uploadFileToS3(state.localpath, outputBucketName, outputPrefix + state.outputFileName);
+                  }
+                  if (segment.startsWith(`ST${elementSeparator}`)){
+                    if (firstST){
+                      firstST = false;
+                      //writer already created
+                    }else{
+                      writer = createOutputFile(inputFile,state);
+                      writer.write(`${isaSegment}${terminatorSuffix}`);
+                      writer.write(`${gsSegment}${terminatorSuffix}`);
+                    }
+                  }
+                }
+                if (!segment.startsWith(`IEA${elementSeparator}`)&& !segment.startsWith(`GE${elementSeparator}`)) {
+                  writer.write(`${segment}${terminatorSuffix}`);
+                }
+
+                if (terminatorSuffix.length !== 0) {
+                  inSuffix = true;
+                }
+              }
+            }
+          }
+
+          function createOutputFile(inputFile,state) {
+            state.transactionCount+=1;
+            state.outputFileName = `${inputFile}_transaction_${state.transactionCount}.x12`;
+            state.localpath = `/tmp/${state.outputFileName}`;
+            console.log(`create write stream ${state.localpath}`);
+            const writeStream = fs.createWriteStream(state.localpath);
+            writeStream.on('error', (err) => {
+              console.error('Error occurred while writing to the file:', err);
+              });
+            return writeStream;
+          }
+
+          function getTerminatorSuffix(buffer) {
+            if (buffer[106] === '\r' && buffer[107] === '\n') {
+              return '\r\n';
+              } else if (buffer[106] === '\r') {
+                return '\r';
+              } else if (buffer[106] === '\n') {
+                return '\n';
+              }
+              return '';
+          }
+
+          function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          }
+
+          function getGSSegmentSixthElement(gsSegment, fieldSeparator) {
+            const pattern = new RegExp(escapeRegExp(fieldSeparator), 'g');
+            const elements = gsSegment.split(pattern);
+            if (elements.length >= 7) {
+              return elements[6];
+              }
+              return null;
+          }
+
+          function isValidSeparator(segment, separator, indices) {
+            for (const index of indices) {
+              if (index >= 0 && index < segment.length && segment.charAt(index) !== separator) {
+                return false;
+                }
+              }
+              return true;
+          }
+
+          function isValidSegmentTerminator(segment, elementSeparator, subElementSeparator, segmentTerminator) {
+            return segmentTerminator !== elementSeparator && segmentTerminator !== subElementSeparator;
+          }
+
+          function getFilename(filePath) {
+            const pathParts = filePath.split(/[\/\\]/);
+            const filename = pathParts[pathParts.length - 1];
+            return filename;
+          }
+
+          async function uploadFileToS3(filePath, bucketName, fileKey) {
+            console.log(`Trying to upload file ${filePath}`);
+            fs.stat(filePath, (err, stats) => {
+              if (err) {
+                console.error('Error getting file size:', err);
+                return;
+              }
+              const fileSize = stats.size;
+              console.log(`File size in bytes: ${fileSize}`);
+            });
+
+            const fileStream = fs.createReadStream(filePath);
+            const uploadParams = {
+              Bucket: bucketName,
+              Key: fileKey,
+              Body: fileStream,
+              };
+
+              const data = await s3Client.send(new PutObjectCommand(uploadParams)).catch((err) => {
+                console.error('Error occurred while uploading file to S3:', err);
+                throw err;
+                });
+                console.log(`File ${filePath} uploaded successfully to s3://${bucketName}/${fileKey}`);
+                fs.unlink(filePath, (err) => {
+                  if (err) {
+                    console.error('Error deleting file:', err);
+                    } else {
+                    console.log(`File ${filePath} deleted successfully!`);
+                  }
+                });
+              }
+
+      Runtime: nodejs20.x
+      Timeout: 900  # Increased to 15 minutes
+      MemorySize: 4096 # Increased for better performance
+      EphemeralStorage:
+        Size: 5120  # Size in MB, can be between 512 and 10240
+      Environment:
+        Variables:
+          OUTPUT_PREFIX: !Ref S3OutputPrefix
+
+Outputs:
+  LambdaFunctionName:
+    Description: 'Name of the created Lambda function'
+    Value: !Ref ProcessS3ObjectLambda
+  S3BucketName:
+    Description: 'Name of the S3 bucket'
+    Value: !Ref S3BucketName
