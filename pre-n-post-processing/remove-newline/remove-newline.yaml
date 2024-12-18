@@ -46,6 +46,7 @@ Resources:
         ZipFile: |
           import boto3
           import os
+          from urllib.parse import unquote
 
           s3 = boto3.client('s3')
           output_prefix = os.environ['OUTPUT_PREFIX']
@@ -53,7 +54,8 @@ Resources:
           def handler(event, context):
               for record in event['Records']:
                   bucket = record['s3']['bucket']['name']
-                  key = record['s3']['object']['key']
+                  key0 = record['s3']['object']['key']
+                  key = unquote(key0)
                   
                   # Create a new key for the processed file
                   output_key = output_prefix + os.path.basename(key)
