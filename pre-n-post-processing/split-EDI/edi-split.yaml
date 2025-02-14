@@ -54,6 +54,7 @@ Resources:
           const s3Client = new S3Client();
           const outputPrefix = process.env.OUTPUT_PREFIX || '';
 
+          let gotISA = false;
 
           async function downloadFromS3(bucketName, key, localPath) {
             console.log(`Downloading s3://${bucketName}/${key} to ${localPath}`);
@@ -136,7 +137,6 @@ Resources:
             let firstST = true;
             let inSuffix = false;
             let currentSegment = '';
-            let gotISA = false;
             let isaChunk = '';
             let writer;
             let isaSegment = '';
