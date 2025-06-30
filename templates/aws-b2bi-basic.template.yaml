@@ -23,6 +23,7 @@ Metadata:
           - InboundTransformerTemplateVersion
           - InboundTransformerTemplateTransactionSet
           - InputConversionFromFormat
+          - InputConversionSplitBy
           - OutboundTransformerName
           - OutboundTransformerTemplateVersion
           - OutboundTransformerTemplateTransactionSet
@@ -61,6 +62,15 @@ Metadata:
           - AcknowledgmentRequestedCode
           - UsageIndicatorCode
           - ValidateEdi
+          - StartingInterchangeControlNumber
+          - StartingFunctionalGroupControlNumber
+          - StartingTransactionSetControlNumber
+          - Gs05TimeFormat
+          - WrapBy
+          - LineTerminator
+          - LineLength
+          - GenerateFunctionalAcknowledgment
+          - GenerateTechnicalAcknowledgment
       - Label:
           default: General
         Parameters:
@@ -90,6 +100,8 @@ Metadata:
         default: Outbound Transformer EDI transaction set
       InputConversionFromFormat:
         default: Input conversion format
+      InputConversionSplitBy:
+        default: Input conversion split by
       OutputConversionToFormat:
         default: Output conversion format
       TemplateLanguage:
@@ -146,6 +158,24 @@ Metadata:
         default: Usage Indicator Code (ISA-15)
       ValidateEdi:
         default: Whether to validate EDI (optional)
+      StartingInterchangeControlNumber:
+        default: Starting interchange control number
+      StartingFunctionalGroupControlNumber:
+        default: Starting Functional group control number
+      StartingTransactionSetControlNumber:
+        default: Starting transaction set control number
+      Gs05TimeFormat:
+        default: Gs05 Time Format (HHMM, HHMMSS, HHMMSSDD)
+      WrapBy:
+        default: What to wrap lines by (SEGMENT, ONE_LINE, LINE_LENGTH)
+      LineTerminator:
+        default: Line terminator (CRLF, LF, CR)
+      LineLength:
+        default: Line length before wrap
+      GenerateFunctionalAcknowledgment:
+        default: Whether or not to generate functional acknowledgments (DO_NOT_GENERATE, GENERATE_ALL_SEGMENTS)
+      GenerateTechnicalAcknowledgment:
+        default: Whether or not to generate technical acknowledgments (DO_NOT_GENERATE, GENERATE_ALL_SEGMENTS)
       Prefix:
         default: Resource name prefix
 
@@ -199,6 +229,13 @@ Parameters:
     AllowedValues:
       - X12
     Default: X12
+  InputConversionSplitBy:
+    Type: String
+    Description: Whether to split inbound EDI by TRANSACTION or NONE
+    AllowedValues:
+     - TRANSACTION
+     - NONE
+    Default: NONE
   OutputConversionToFormat:
     Type: String
     Description: Output conversion format.
@@ -1705,73 +1742,128 @@ Parameters:
     Type: String
     AllowedValues: [ "true", "false", "" ]
     Description: "Whether to validate EDI (optional)"
+    Default: "true"
   ApplicationSenderCode:
     Type: String
     Description: Application Sender Code (GS-02)
     AllowedPattern: "^$|^[a-zA-Z0-9]{2,15}$"
-    Default: ""
+    Default: "ASC"
   ApplicationReceiverCode:
     Type: String
     Description: Application Receiver Code (GS-03)
     AllowedPattern: "^$|^[a-zA-Z0-9]{2,15}$"
-    Default: ""
+    Default: "ARC"
   ResponsibleAgencyCode:
     Type: String
     Description: Responsible Agency Code (GS-07)
     AllowedPattern: "^[a-zA-Z0-9]*$"
     MaxLength: 2
-    Default: ""
+    Default: "X"
   SenderIdQualifier:
     Type: String
     Description: Sender ID Qualifier (ISA-05)
     AllowedPattern: "^[a-zA-Z0-9]*${2}$"
-    Default: ""
+    Default: "01"
   SenderId:
     Type: String
     Description: Sender ID (ISA-06)
     AllowedPattern: "^$|^[a-zA-Z0-9]{15}$"
-    Default: ""
+    Default: "123456789012345"
   ReceiverIdQualifier:
     Type: String
     Description: Receiver ID Qualifier (ISA-07)
     AllowedPattern: "^[a-zA-Z0-9]*${2}$"
-    Default: ""
+    Default: "01"
   ReceiverId:
     Type: String
     Description: Receiver ID (ISA-08)
     AllowedPattern: "^[a-zA-Z0-9]*${15}$"
     MaxLength: 15
-    Default: ""
+    Default: "098765432109876"
   AcknowledgmentRequestedCode:
     Type: String
     Description: Acknowledgment Requested Code (ISA-14)
     AllowedPattern: "^[a-zA-Z0-9]*$"
     MaxLength: 1
-    Default: ""
+    Default: "0"
   UsageIndicatorCode:
     Type: String
     Description: Usage Indicator Code (ISA-15)
     AllowedPattern: "^[a-zA-Z0-9]*$"
     MaxLength: 1
-    Default: ""
+    Default: "T"
   ComponentSeparator:
     Type: String
     Description: "Component separator for X12 EDI (special characters allowed)"
     AllowedPattern: "^$|^[!&'()*+,\\-./:;?=%@\\[\\]_{}|<>~^`\"]$"
     MaxLength: 1
-    Default: ""
+    Default: ":"
   DataElementSeparator:
     Type: String
     Description: "Data element separator for X12 EDI (special characters allowed)"
     AllowedPattern: "^$|^[!&'()*+,\\-./:;?=%@\\[\\]_{}|<>~^`\"]$"
     MaxLength: 1
-    Default: ""
+    Default: "*"
   SegmentTerminator:
     Type: String
     Description: "Segment terminator for X12 EDI (special characters allowed)"
     AllowedPattern: "^$|^[!&'()*+,\\-./:;?=%@\\[\\]_{}|<>~^`\"]$"
     MaxLength: 1
-    Default: ""
+    Default: "~"
+  StartingInterchangeControlNumber:
+    Type: String
+    Description: "Starting interchange control number"
+    Default: "5"
+  StartingFunctionalGroupControlNumber:
+    Type: Number
+    Description: "Starting functional group control number"
+    Default: "5"
+  StartingTransactionSetControlNumber:
+    Type: Number
+    Description: "Starting transaction set control number"
+    Default: "5"
+  Gs05TimeFormat:
+    Type: String
+    Description: Gs05 Time Format
+    AllowedValues:
+      - HHMM
+      - HHMMSS
+      - HHMMSSDD
+    Default: HHMM
+  WrapBy:
+    Type: String
+    Description: What to wrap a line by
+    AllowedValues:
+      - SEGMENT
+      - ONE_LINE
+      - LINE_LENGTH
+    Default: LINE_LENGTH
+  LineTerminator:
+    Type: String
+    Description: Line terminator
+    AllowedValues:
+      - CRLF
+      - LF
+      - CR
+    Default: CRLF
+  LineLength:
+    Type: String
+    Description: "Line length before wrap"
+    Default: 7
+  GenerateFunctionalAcknowledgment:
+    Type: String
+    Description: Whether or not to generate a functional acknowledgment
+    AllowedValues:
+      - DO_NOT_GENERATE
+      - GENERATE_ALL_SEGMENTS
+    Default: DO_NOT_GENERATE
+  GenerateTechnicalAcknowledgment:
+    Type: String
+    Description: Whether or not to generate a technical acknowledgment
+    AllowedValues:
+      - DO_NOT_GENERATE
+      - GENERATE_ALL_SEGMENTS
+    Default: DO_NOT_GENERATE
   CapabilityOptions:
     Type: String
     Description: 'Capability options as a JSON string or leave blank for none.'
@@ -1810,6 +1902,21 @@ Conditions:
     - !Condition AllDelimitersNone
   HasAcknowledgmentRequestedCode: !Not [!Equals [!Ref AcknowledgmentRequestedCode, ""]]
   HasUsageIndicatorCode: !Not [!Equals [!Ref UsageIndicatorCode, ""]]
+  HasStartingInterchangeControlNumber: !Not [!Equals [!Ref StartingInterchangeControlNumber, ""]]
+  HasStartingFunctionalGroupControlNumber: !Not [!Equals [!Ref StartingFunctionalGroupControlNumber, ""]]
+  HasStartingTransactionSetControlNumber: !Not [!Equals [!Ref StartingTransactionSetControlNumber, ""]]
+  HasAnyControlNumbers: !Or
+   - !Condition HasStartingInterchangeControlNumber
+   - !Condition HasStartingFunctionalGroupControlNumber
+   - !Condition HasStartingTransactionSetControlNumber
+  HasGs05TimeFormat: !Not [!Equals [!Ref Gs05TimeFormat, ""]]
+  HasWrapOptions: !And
+   - !Not [ !Equals [ !Ref WrapBy, "" ] ]
+   - !Not [ !Equals [ !Ref LineTerminator, "" ] ]
+   - !Not [ !Equals [ !Ref LineLength, "" ] ]
+  HasAcknowledgmentOptions: !And
+   - !Not [ !Equals [ !Ref GenerateFunctionalAcknowledgment, "" ] ]
+   - !Not [ !Equals [ !Ref GenerateTechnicalAcknowledgment, "" ] ]
 
 Resources:
   B2BiS3Bucket:
@@ -1906,6 +2013,11 @@ Resources:
               Ref: InboundTransformerTemplateTransactionSet
             Version:
               Ref: InboundTransformerTemplateVersion
+        AdvancedOptions:
+          X12:
+            SplitOptions:
+              SplitBy: 
+                Ref: InputConversionSplitBy
       Mapping:
         TemplateLanguage:
           Ref: TemplateLanguage
@@ -2055,6 +2167,42 @@ Resources:
                             - !Ref UsageIndicatorCode
                             - !Ref "AWS::NoValue"
                       - !Ref "AWS::NoValue"
+                  ControlNumbers:
+                    StartingInterchangeControlNumber: 
+                      Fn::If:
+                         - HasStartingInterchangeControlNumber
+                         - !Ref StartingInterchangeControlNumber
+                         - !Ref "AWS::NoValue"
+                    StartingFunctionalGroupControlNumber:
+                      Fn::If:
+                         - HasStartingFunctionalGroupControlNumber
+                         - !Ref StartingFunctionalGroupControlNumber
+                         - !Ref "AWS::NoValue"
+                    StartingTransactionSetControlNumber:
+                      Fn::If:
+                         - HasStartingTransactionSetControlNumber
+                         - !Ref StartingTransactionSetControlNumber
+                         - !Ref "AWS::NoValue"
+                  Gs05TimeFormat:
+                    Fn::If:
+                      - HasGs05TimeFormat
+                      - !Ref Gs05TimeFormat
+                      - !Ref "AWS::NoValue"
+                WrapOptions:
+                    Fn::If:
+                      - HasWrapOptions
+                      - WrapBy: !Ref WrapBy
+                        LineTerminator: !Ref LineTerminator
+                        LineLength: !Ref LineLength
+                      - !Ref "AWS::NoValue"
+            InboundEdi:
+              Fn::If:
+              - HasAcknowledgmentOptions
+              - X12:
+                  AcknowledgmentOptions:
+                    FunctionalAcknowledgment: !Ref GenerateFunctionalAcknowledgment
+                    TechnicalAcknowledgment: !Ref GenerateTechnicalAcknowledgment
+              - !Ref "AWS::NoValue"
           - !Ref "AWS::NoValue"
 
 Outputs:
