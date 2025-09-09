@@ -1,0 +1,43 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+Description: CloudFormation template to create inactive inbound AWS::B2BI::Transformer resource.
+Resources:
+  Transformer:
+    Type: AWS::B2BI::Transformer
+    Properties:
+      Name:
+        Fn::Sub:
+          - Inbound-Transformer-${UUID}
+          - UUID:
+              Fn::Select:
+                - 2
+                - Fn::Split:
+                  - /
+                  - Ref: AWS::StackId
+      Mapping:
+        TemplateLanguage: "JSONATA"
+        Template: "$"
+      InputConversion:
+        FromFormat: "X12"
+        FormatOptions:
+          X12:
+            TransactionSet: X12_120
+            Version: VERSION_4010
+        AdvancedOptions:
+          X12:
+            SplitOptions:
+              SplitBy: "TRANSACTION"
+            ValidationOptions:
+              ValidationRules:
+                - {"CodeListValidationRule":{"ElementId":"0090","CodesToAdd":["A"],"CodesToRemove":["C","N","X"]}}
+                - {"ElementRequirementValidationRule":{"ElementPosition":"VC-11","Requirement":"MANDATORY"}}
+                - {"ElementLengthValidationRule":{"ElementId":"0539","MaxLength":10,"MinLength":2}}
+      SampleDocuments:
+        BucketName: "test-bucket"
+        Keys:
+          - Input: "input.txt"
+            Output: "output.txt"
+      Status: active
+      Tags:
+        - Key: resourceKey
+          Value: resourceValue
